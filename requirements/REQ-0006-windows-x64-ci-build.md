@@ -58,6 +58,7 @@
 - 2026-07-21：GitHub Actions 运行 `29818774620` 成功，Windows x64 NSIS Job 用时 6 分 44 秒。
 - 2026-07-21：Artifact `ChuckleChick-windows-x64-nsis` 上传成功，归档大小约 4.5 MB。
 - 2026-07-21：下载并核对 Artifact，包含 `ChuckleChick_0.1.0_x64-setup.exe`。
+- 2026-07-21：升级基础 Actions 后再次运行 `29819324504`，6 分 41 秒成功完成且无 Node.js 20 弃用警告，Artifact 再次生成。
 
 ## 变更记录
 
