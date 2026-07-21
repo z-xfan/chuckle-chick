@@ -1,33 +1,36 @@
-import { Application, Assets, Rectangle, Sprite, Texture, type Ticker } from "pixi.js";
-
 import { AnimationTimeline } from "@/pet-core/AnimationTimeline";
 import type { LoadedPetAsset } from "@/pet-assets/types";
 
+interface SpriteFrame {
+  row: number;
+  column: number;
+}
+
 export class PixiPetRenderer {
-  private readonly app = new Application();
+  private readonly canvas = document.createElement("canvas");
+  private readonly context = this.canvas.getContext("2d", { alpha: true });
   private asset?: LoadedPetAsset;
-  private frames: Texture[] = [];
-  private sprite?: Sprite;
+  private spritesheet?: HTMLImageElement;
+  private frames: SpriteFrame[] = [];
   private timeline?: AnimationTimeline;
   private currentFrame = -1;
   private resizeObserver?: ResizeObserver;
+  private animationFrameId?: number;
+  private lastTickMs?: number;
 
-  constructor(private readonly host: HTMLElement) {}
+  constructor(private readonly host: HTMLElement) {
+    if (!this.context) throw new Error("当前环境不支持 Canvas 2D 渲染");
+  }
 
   async initialize(asset: LoadedPetAsset): Promise<void> {
     this.asset = asset;
-    await this.app.init({
-      preference: "webgl",
-      resizeTo: this.host,
-      backgroundAlpha: 0,
-      antialias: true,
-      autoDensity: true,
-      resolution: window.devicePixelRatio,
-    });
-    this.host.appendChild(this.app.canvas);
-    this.app.ticker.add(this.onTick);
+    this.spritesheet = await loadImage(asset.spritesheetUrl);
+    this.canvas.setAttribute("aria-hidden", "true");
+    this.host.appendChild(this.canvas);
     this.resizeObserver = new ResizeObserver(() => this.resizeToHost());
     this.resizeObserver.observe(this.host);
+    this.resizeToHost();
+    this.startTicker();
   }
 
   async play(animationName: string): Promise<void> {
@@ -35,75 +38,100 @@ export class PixiPetRenderer {
     const animation = this.asset.atlas.animations[animationName];
     if (!animation) throw new Error(`未找到动画：${animationName}`);
 
-    const sheet = await Assets.load<Texture>(this.asset.spritesheetUrl);
-    const frames = Array.from({ length: animation.frames }, (_, column) =>
-      new Texture({
-        source: sheet.source,
-        frame: new Rectangle(
-          column * this.asset!.atlas.grid.cellWidth,
-          animation.row * this.asset!.atlas.grid.cellHeight,
-          this.asset!.atlas.grid.cellWidth,
-          this.asset!.atlas.grid.cellHeight,
-        ),
-      }),
-    );
-    this.replaceFrames(frames);
+    this.frames = Array.from({ length: animation.frames }, (_, column) => ({
+      row: animation.row,
+      column,
+    }));
     this.timeline = new AnimationTimeline(animation);
     this.currentFrame = 0;
+    this.drawCurrentFrame();
   }
 
   async showLookDirection(row: number, column: number): Promise<void> {
     if (!this.asset) throw new Error("PixiPetRenderer 尚未初始化");
-    const sheet = await Assets.load<Texture>(this.asset.spritesheetUrl);
-    const { cellWidth, cellHeight } = this.asset.atlas.grid;
-    this.replaceFrames([
-      new Texture({
-        source: sheet.source,
-        frame: new Rectangle(column * cellWidth, row * cellHeight, cellWidth, cellHeight),
-      }),
-    ]);
+    this.frames = [{ row, column }];
     this.timeline = undefined;
     this.currentFrame = 0;
+    this.drawCurrentFrame();
   }
 
   destroy(): void {
-    this.app.ticker.remove(this.onTick);
+    if (this.animationFrameId !== undefined) window.cancelAnimationFrame(this.animationFrameId);
+    this.animationFrameId = undefined;
     this.resizeObserver?.disconnect();
-    this.sprite?.destroy();
-    this.sprite = undefined;
-    this.frames.forEach((frame) => frame.destroy(false));
+    this.canvas.remove();
     this.frames = [];
-    this.app.destroy(true, { children: true });
   }
 
-  private readonly onTick = (ticker: Ticker): void => {
-    if (!this.timeline || !this.sprite) return;
-    const nextFrame = this.timeline.advance(ticker.deltaMS);
+  private startTicker(): void {
+    const tick = (timestamp: number): void => {
+      const deltaMs = this.lastTickMs === undefined ? 0 : timestamp - this.lastTickMs;
+      this.lastTickMs = timestamp;
+      this.advance(deltaMs);
+      this.animationFrameId = window.requestAnimationFrame(tick);
+    };
+    this.animationFrameId = window.requestAnimationFrame(tick);
+  }
+
+  private advance(deltaMs: number): void {
+    if (!this.timeline) return;
+    const nextFrame = this.timeline.advance(deltaMs);
     if (nextFrame === this.currentFrame) return;
-
-    const texture = this.frames[nextFrame];
-    if (!texture) return;
-    this.sprite.texture = texture;
     this.currentFrame = nextFrame;
-  };
-
-  private replaceFrames(frames: Texture[]): void {
-    this.sprite?.destroy();
-    this.frames.forEach((frame) => frame.destroy(false));
-    this.frames = frames;
-    this.sprite = new Sprite(frames[0]);
-    this.app.stage.addChild(this.sprite);
-    this.resizeToHost();
+    this.drawCurrentFrame();
   }
 
   private resizeToHost(): void {
     const width = this.host.clientWidth;
     const height = this.host.clientHeight;
     if (width <= 0 || height <= 0) return;
-    this.app.renderer.resize(width, height);
-    if (this.sprite) {
-      this.sprite.width = width;
-      this.sprite.height = height;
-    }
+
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    this.canvas.width = Math.round(width * ratio);
+    this.canvas.height = Math.round(height * ratio);
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    this.context?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    this.drawCurrentFrame();
   }
+
+  private drawCurrentFrame(): void {
+    if (!this.asset || !this.spritesheet || !this.context) return;
+    const frame = this.frames[this.currentFrame];
+    if (!frame) return;
+
+    const width = this.host.clientWidth;
+    const height = this.host.clientHeight;
+    if (width <= 0 || height <= 0) return;
+
+    const { cellWidth, cellHeight } = this.asset.atlas.grid;
+    this.context.clearRect(0, 0, width, height);
+    this.context.drawImage(
+      this.spritesheet,
+      frame.column * cellWidth,
+      frame.row * cellHeight,
+      cellWidth,
+      cellHeight,
+      0,
+      0,
+      width,
+      height,
+    );
+  }
+}
+
+async function loadImage(url: string): Promise<HTMLImageElement> {
+  const image = new Image();
+  image.decoding = "async";
+  image.src = url;
+  if (!image.complete) {
+    await new Promise<void>((resolve, reject) => {
+      image.addEventListener("load", () => resolve(), { once: true });
+      image.addEventListener("error", () => reject(new Error(`图片资源读取失败：${url}`)), {
+        once: true,
+      });
+    });
+  }
+  await image.decode?.().catch(() => undefined);
+  return image;
 }
