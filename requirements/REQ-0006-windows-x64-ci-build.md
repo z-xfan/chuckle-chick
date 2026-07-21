@@ -55,6 +55,7 @@
 - 2026-07-21：首次运行后将 GitHub 官方基础 Actions 升级到 Node.js 24 运行时版本，避免弃用警告。
 - 2026-07-21：Windows 实机运行发现 CSP 未允许同源 `fetch`，导致宠物 JSON 资源加载失败；补充安装版资源加载修复。
 - 2026-07-21：Windows 安装产物实机运行发现 PixiJS 在 Tauri 严格 CSP 下触发 `unsafe-eval` 报错；在应用入口预加载 `pixi.js/unsafe-eval` 静态回退模块，避免放宽 Tauri CSP。
+- 2026-07-21：Windows 安装产物实机运行发现托盘存在但宠物透明窗口未显示内容；将 PixiJS 渲染器固定为 WebGL，避免 WebView2 透明窗口下自动选择 WebGPU 导致空白。
 
 ## 验证记录
 
@@ -64,6 +65,7 @@
 - 2026-07-21：升级基础 Actions 后再次运行 `29819324504`，6 分 41 秒成功完成且无 Node.js 20 弃用警告，Artifact 再次生成。
 - 2026-07-21：CSP 的 `connect-src` 已加入 `'self'`；前端 11 项测试和 Rust 4 项测试通过，生产构建成功且确认三份宠物资源均进入 `dist`。等待新的 Windows 安装包实机验收。
 - 2026-07-21：本地执行前端测试与生产构建，确认 `pixi.js/unsafe-eval` 可被 Vite 打包解析；等待新的 GitHub Actions Windows Artifact 实机验收。
+- 2026-07-21：本地执行前端测试与生产构建，确认 PixiJS `preference: "webgl"` 类型检查与打包通过；等待新的 GitHub Actions Windows Artifact 实机验收。
 
 ## 变更记录
 
@@ -72,3 +74,4 @@
 | 2026-07-21 | 用户确认采用 GitHub Actions Windows Runner 自动构建 Windows x64 安装包 |
 | 2026-07-21 | 补充 Windows 安装版必须能够正常加载随包宠物资源的验收要求 |
 | 2026-07-21 | 补充 PixiJS 在 Tauri 严格 CSP 下不得触发 `unsafe-eval` 运行时报错的修复记录 |
+| 2026-07-21 | 补充 Windows WebView2 透明窗口下固定 PixiJS WebGL 渲染器的修复记录 |

@@ -17,6 +17,7 @@ export class PixiPetRenderer {
   async initialize(asset: LoadedPetAsset): Promise<void> {
     this.asset = asset;
     await this.app.init({
+      preference: "webgl",
       resizeTo: this.host,
       backgroundAlpha: 0,
       antialias: true,
