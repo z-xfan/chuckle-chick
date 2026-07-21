@@ -1,0 +1,27 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  background: transparent;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app,
+.pet-window {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}

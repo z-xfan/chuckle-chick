@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ChuckleChick",
+  "version": "0.1.0",
+  "identifier": "com.chucklechick.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "ChuckleChick",
+        "width": 144,
+        "height": 156,
+        "minWidth": 58,
+        "minHeight": 62,
+        "maxWidth": 288,
+        "maxHeight": 312,
+        "transparent": true,
+        "decorations": false,
+        "shadow": false,
+        "acceptFirstMouse": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false
+      },
+      {
+        "label": "settings",
+        "title": "ChuckleChick 设置",
+        "url": "index.html#settings",
+        "width": 420,
+        "height": 410,
+        "minWidth": 380,
+        "minHeight": 380,
+        "visible": false,
+        "resizable": false,
+        "maximizable": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "shortDescription": "ChuckleChick Windows desktop pet"
+  }
+}

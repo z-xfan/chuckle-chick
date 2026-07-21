@@ -48,4 +48,7 @@ REQ-0002-desktop-app-foundation.md
 | 编号 | 名称 | 状态 |
 | --- | --- | --- |
 | [REQ-0001](REQ-0001-project-structure-and-requirement-workflow.md) | 项目内容划分与需求先行流程 | 已完成 |
-| [REQ-0002](REQ-0002-desktop-pet-technical-foundation.md) | Windows 桌面宠物技术方案 | 已确认 |
+| [REQ-0002](REQ-0002-desktop-pet-technical-foundation.md) | Windows 桌面宠物技术方案 | 开发中 |
+| [REQ-0003](REQ-0003-directional-mouse-interactions.md) | 方向拖动与看向鼠标动画 | 开发中 |
+| [REQ-0004](REQ-0004-pet-scaling-experience.md) | 宠物缩放体验优化 | 开发中 |
+| [REQ-0005](REQ-0005-hover-animation.md) | 鼠标悬停动画反馈 | 开发中 |
