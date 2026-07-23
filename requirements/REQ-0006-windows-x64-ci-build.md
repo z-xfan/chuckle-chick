@@ -2,9 +2,9 @@
 
 ## 基本信息
 
-- 状态：待验收
+- 状态：已完成
 - 创建日期：2026-07-21
-- 最后更新：2026-07-21
+- 最后更新：2026-07-23
 - 负责人：待定
 
 ## 背景
@@ -46,7 +46,7 @@
 - [x] Actions 页面提供 Windows x64 NSIS Artifact 下载。
 - [x] Artifact 中包含 `.exe` 安装程序。
 - [x] 工作流不创建 Release，不要求签名密钥。
-- [ ] Windows 安装版可以读取随包发布的宠物 JSON 与图片资源并正常显示宠物。
+- [x] Windows 安装版可以读取随包发布的宠物 JSON 与图片资源并正常显示宠物。
 
 ## 实施记录
 
@@ -68,6 +68,7 @@
 - 2026-07-21：本地执行前端测试与生产构建，确认 `pixi.js/unsafe-eval` 可被 Vite 打包解析；等待新的 GitHub Actions Windows Artifact 实机验收。
 - 2026-07-21：本地执行前端测试与生产构建，确认 PixiJS `preference: "webgl"` 类型检查与打包通过；等待新的 GitHub Actions Windows Artifact 实机验收。
 - 2026-07-21：本地执行前端测试与生产构建，确认 Canvas 2D 图集播放器类型检查与打包通过；等待新的 GitHub Actions Windows Artifact 实机验收。
+- 2026-07-23：用户在家用 Windows 电脑上安装并运行由账号 `z-xfan` 手动触发的 `Build Windows x64` 第 6 次运行产物；安装版能够正常读取随包发布的宠物 JSON 与图片资源并显示宠物，最终实机验收通过。
 
 ## 变更记录
 
@@ -78,3 +79,4 @@
 | 2026-07-21 | 补充 PixiJS 在 Tauri 严格 CSP 下不得触发 `unsafe-eval` 运行时报错的修复记录 |
 | 2026-07-21 | 补充 Windows WebView2 透明窗口下固定 PixiJS WebGL 渲染器的修复记录 |
 | 2026-07-21 | 将首版宠物 PNG 图集渲染切换为 Canvas 2D，以排除 PixiJS 后端在透明 WebView2 中空白的风险 |
+| 2026-07-23 | Windows x64 第 6 次手动构建产物通过家用 Windows 电脑实机验收，需求状态更新为已完成 |

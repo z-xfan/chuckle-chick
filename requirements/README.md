@@ -52,4 +52,4 @@ REQ-0002-desktop-app-foundation.md
 | [REQ-0003](REQ-0003-directional-mouse-interactions.md) | 方向拖动与看向鼠标动画 | 开发中 |
 | [REQ-0004](REQ-0004-pet-scaling-experience.md) | 宠物缩放体验优化 | 开发中 |
 | [REQ-0005](REQ-0005-hover-animation.md) | 鼠标悬停动画反馈 | 开发中 |
-| [REQ-0006](REQ-0006-windows-x64-ci-build.md) | Windows x64 自动构建 | 待验收 |
+| [REQ-0006](REQ-0006-windows-x64-ci-build.md) | Windows x64 自动构建 | 已完成 |
