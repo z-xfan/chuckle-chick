@@ -53,3 +53,4 @@ REQ-0002-desktop-app-foundation.md
 | [REQ-0004](REQ-0004-pet-scaling-experience.md) | 宠物缩放体验优化 | 开发中 |
 | [REQ-0005](REQ-0005-hover-animation.md) | 鼠标悬停动画反馈 | 开发中 |
 | [REQ-0006](REQ-0006-windows-x64-ci-build.md) | Windows x64 自动构建 | 已完成 |
+| [REQ-0007](REQ-0007-pet-quick-panel-and-speech-bubbles.md) | 宠物点击、气泡与快捷功能面板 | 待验收 |

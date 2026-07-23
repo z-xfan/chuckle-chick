@@ -81,7 +81,13 @@ export function parsePetAtlas(value: unknown): PetAtlas {
     throw new Error("图集高度与网格行定义不一致");
   }
   for (const [name, animation] of Object.entries(parsed.animations)) {
-    if (animation.row >= parsed.grid.rows || animation.frames > parsed.grid.columns) {
+    const columns =
+      animation.frameColumns ??
+      Array.from({ length: animation.frames }, (_, column) => column);
+    if (
+      animation.row >= parsed.grid.rows ||
+      columns.some((column) => column >= parsed.grid.columns)
+    ) {
       throw new Error(`动画 ${name} 超出图集网格范围`);
     }
   }
@@ -95,13 +101,27 @@ function parseAnimation(name: string, value: unknown): PetAnimation {
   if (!Array.isArray(record.durationsMs) || record.durationsMs.length !== frames) {
     throw new Error(`动画 ${name} 的帧数与 durationsMs 数量不一致`);
   }
+  const frameColumns =
+    record.frameColumns === undefined
+      ? undefined
+      : parseFrameColumns(name, record.frameColumns, frames);
   return {
     row: requireNonNegativeInteger(record.row, `animation.${name}.row`),
     frames,
     durationsMs: record.durationsMs.map((duration, index) =>
       requirePositiveInteger(duration, `animation.${name}.durationsMs[${index}]`),
     ),
+    frameColumns,
   };
+}
+
+function parseFrameColumns(name: string, value: unknown, frames: number): number[] {
+  if (!Array.isArray(value) || value.length !== frames) {
+    throw new Error(`动画 ${name} 的帧数与 frameColumns 数量不一致`);
+  }
+  return value.map((column, index) =>
+    requireNonNegativeInteger(column, `animation.${name}.frameColumns[${index}]`),
+  );
 }
 
 function parseLookDirections(value: unknown): PetAtlas["lookDirections"] {

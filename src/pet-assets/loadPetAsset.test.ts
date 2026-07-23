@@ -40,4 +40,44 @@ describe("pet asset validation", () => {
       }),
     ).toThrow("图集宽度与网格列定义不一致");
   });
+
+  it("accepts a repeated explicit frame sequence", () => {
+    const atlas = parsePetAtlas({
+      version: 2,
+      image: "spritesheet.png",
+      canvas: { width: 30, height: 10 },
+      grid: { columns: 3, rows: 1, cellWidth: 10, cellHeight: 10 },
+      animations: {
+        idle: {
+          row: 0,
+          frames: 5,
+          durationsMs: [100, 100, 100, 100, 100],
+          frameColumns: [0, 1, 2, 1, 0],
+        },
+      },
+      lookDirections: [],
+    });
+
+    expect(atlas.animations.idle?.frameColumns).toEqual([0, 1, 2, 1, 0]);
+  });
+
+  it("rejects an explicit animation column outside the grid", () => {
+    expect(() =>
+      parsePetAtlas({
+        version: 2,
+        image: "spritesheet.png",
+        canvas: { width: 20, height: 10 },
+        grid: { columns: 2, rows: 1, cellWidth: 10, cellHeight: 10 },
+        animations: {
+          idle: {
+            row: 0,
+            frames: 2,
+            durationsMs: [100, 100],
+            frameColumns: [0, 2],
+          },
+        },
+        lookDirections: [],
+      }),
+    ).toThrow("超出图集网格范围");
+  });
 });

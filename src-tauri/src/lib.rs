@@ -1,6 +1,8 @@
+mod assistant;
 mod preferences;
 mod tray;
 
+use assistant::AssistantWindowState;
 use preferences::{AppPreferences, PersistentPreferences, SavedPosition};
 use serde::Serialize;
 use tauri::{
@@ -58,6 +60,11 @@ fn set_pet_always_on_top(
     pet_window
         .set_always_on_top(enabled)
         .map_err(|error| error.to_string())?;
+    if let Some(assistant_window) = window.app_handle().get_webview_window("assistant") {
+        assistant_window
+            .set_always_on_top(enabled)
+            .map_err(|error| error.to_string())?;
+    }
     tray_menu
         .always_on_top
         .set_checked(enabled)
@@ -90,6 +97,33 @@ fn set_pet_scale(
 #[tauri::command]
 fn close_settings_window(window: WebviewWindow) -> Result<(), String> {
     window.hide().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn open_settings_window(
+    window: WebviewWindow,
+    assistant_state: State<'_, AssistantWindowState>,
+) -> Result<(), String> {
+    assistant::hide_for_app(window.app_handle(), &assistant_state)?;
+    let settings = window
+        .app_handle()
+        .get_webview_window("settings")
+        .ok_or_else(|| "找不到设置窗口".to_string())?;
+    settings.show().map_err(|error| error.to_string())?;
+    settings.set_focus().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn set_speech_bubbles_enabled(
+    enabled: bool,
+    window: WebviewWindow,
+    state: State<'_, PersistentPreferences>,
+    assistant_state: State<'_, AssistantWindowState>,
+) -> Result<(), String> {
+    if !enabled {
+        assistant::hide_for_app(window.app_handle(), &assistant_state)?;
+    }
+    state.update(|preferences| preferences.speech_bubbles_enabled = enabled)
 }
 
 #[tauri::command]
@@ -235,15 +269,23 @@ pub fn run() {
             set_pet_always_on_top,
             set_pet_scale,
             close_settings_window,
+            open_settings_window,
+            set_speech_bubbles_enabled,
             get_pointer_snapshot,
             is_left_mouse_button_pressed,
-            reset_pet_position
+            reset_pet_position,
+            assistant::toggle_quick_panel,
+            assistant::get_assistant_payload,
+            assistant::show_speech_bubble,
+            assistant::hide_assistant_window,
+            assistant::request_pet_interaction
         ])
         .setup(|app| {
             let config_path = app.path().app_config_dir()?.join("preferences.json");
             let state = PersistentPreferences::load(config_path);
             let preferences = state.snapshot();
             app.manage(state.clone());
+            app.manage(AssistantWindowState::default());
 
             let pet_window = app
                 .get_webview_window("main")
@@ -270,6 +312,18 @@ pub fn run() {
             if let Some(settings_window) = app.get_webview_window("settings") {
                 let window_to_hide = settings_window.clone();
                 settings_window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_to_hide.hide();
+                    }
+                });
+            }
+
+            if let Some(assistant_window) = app.get_webview_window("assistant") {
+                assistant_window.set_always_on_top(preferences.always_on_top)?;
+                assistant_window.set_focusable(false)?;
+                let window_to_hide = assistant_window.clone();
+                assistant_window.on_window_event(move |event| {
                     if let WindowEvent::CloseRequested { api, .. } = event {
                         api.prevent_close();
                         let _ = window_to_hide.hide();

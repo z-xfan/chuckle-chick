@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "assistant-window",
+  "description": "Only the event operations required by the speech bubble and quick panel window.",
+  "windows": ["assistant"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten"
+  ]
+}

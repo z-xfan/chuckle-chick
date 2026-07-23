@@ -4,7 +4,10 @@ use tauri::{
     AppHandle, Manager, Wry,
 };
 
-use crate::preferences::PersistentPreferences;
+use crate::{
+    assistant::{self, AssistantWindowState},
+    preferences::PersistentPreferences,
+};
 
 pub struct TrayMenuState {
     pub always_on_top: CheckMenuItem<Wry>,
@@ -42,6 +45,8 @@ pub fn create_tray(app: &AppHandle) -> tauri::Result<TrayMenuState> {
                 if let Some(window) = app.get_webview_window("main") {
                     let visible = window.is_visible().unwrap_or(true);
                     if visible {
+                        let assistant_state = app.state::<AssistantWindowState>();
+                        let _ = assistant::hide_for_app(app, &assistant_state);
                         let _ = window.hide();
                         let _ = show_hide_for_event.set_text("显示宠物");
                     } else {
@@ -56,18 +61,25 @@ pub fn create_tray(app: &AppHandle) -> tauri::Result<TrayMenuState> {
                 let enabled = !state.snapshot().always_on_top;
                 if let Some(window) = app.get_webview_window("main") {
                     if window.set_always_on_top(enabled).is_ok() {
+                        if let Some(assistant) = app.get_webview_window("assistant") {
+                            let _ = assistant.set_always_on_top(enabled);
+                        }
                         let _ = always_on_top_for_event.set_checked(enabled);
                         let _ = state.update(|preferences| preferences.always_on_top = enabled);
                     }
                 }
             }
             "settings" => {
+                let assistant_state = app.state::<AssistantWindowState>();
+                let _ = assistant::hide_for_app(app, &assistant_state);
                 if let Some(window) = app.get_webview_window("settings") {
                     let _ = window.show();
                     let _ = window.set_focus();
                 }
             }
             "quit" => {
+                let assistant_state = app.state::<AssistantWindowState>();
+                let _ = assistant::hide_for_app(app, &assistant_state);
                 let _ = app.state::<PersistentPreferences>().persist();
                 app.exit(0);
             }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
+import PetPortrait from "@/components/PetPortrait.vue";
 import {
   closeSettingsWindow,
   getPreferences,
   resetPetPosition,
   setPetAlwaysOnTop,
   setPetScale,
+  setSpeechBubblesEnabled,
 } from "@/platform/preferences";
 
 const loading = ref(true);
@@ -14,6 +16,7 @@ const saving = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const alwaysOnTop = ref(true);
+const speechBubblesEnabled = ref(true);
 const scale = ref(1);
 let scaleSaveTimer: number | undefined;
 
@@ -21,6 +24,7 @@ onMounted(async () => {
   try {
     const preferences = await getPreferences();
     alwaysOnTop.value = preferences.alwaysOnTop;
+    speechBubblesEnabled.value = preferences.speechBubblesEnabled;
     scale.value = preferences.scale;
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error);
@@ -37,6 +41,20 @@ async function saveAlwaysOnTop(): Promise<void> {
     await setPetAlwaysOnTop(alwaysOnTop.value);
   } catch (error) {
     alwaysOnTop.value = !alwaysOnTop.value;
+    errorMessage.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function saveSpeechBubblesEnabled(): Promise<void> {
+  saving.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
+  try {
+    await setSpeechBubblesEnabled(speechBubblesEnabled.value);
+  } catch (error) {
+    speechBubblesEnabled.value = !speechBubblesEnabled.value;
     errorMessage.value = error instanceof Error ? error.message : String(error);
   } finally {
     saving.value = false;
@@ -97,6 +115,19 @@ async function restoreDefaultPosition(): Promise<void> {
         <input v-model="alwaysOnTop" type="checkbox" :disabled="saving" @change="saveAlwaysOnTop" />
       </label>
 
+      <label class="settings__row">
+        <span>
+          <strong>显示宠物气泡</strong>
+          <small>允许黄鸡在互动时显示简短台词</small>
+        </span>
+        <input
+          v-model="speechBubblesEnabled"
+          type="checkbox"
+          :disabled="saving"
+          @change="saveSpeechBubblesEnabled"
+        />
+      </label>
+
       <label class="settings__scale">
         <span>
           <strong>宠物大小</strong>
@@ -113,7 +144,7 @@ async function restoreDefaultPosition(): Promise<void> {
       </label>
 
       <div class="settings__pet">
-        <span class="settings__pet-icon">🐥</span>
+        <span class="settings__pet-icon"><PetPortrait :size="38" /></span>
         <span><strong>黄鸡大笑</strong><small>当前宠物</small></span>
       </div>
 
@@ -226,7 +257,12 @@ h1 {
 }
 
 .settings__pet-icon {
-  font-size: 28px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 13px;
+  background: rgb(255 248 220 / 78%);
 }
 
 .settings__error {

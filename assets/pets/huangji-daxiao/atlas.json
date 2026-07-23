@@ -39,8 +39,9 @@
     },
     "failed": {
       "row": 5,
-      "frames": 8,
-      "durationsMs": [140, 140, 140, 140, 140, 140, 140, 240]
+      "frames": 5,
+      "durationsMs": [180, 180, 320, 180, 260],
+      "frameColumns": [0, 1, 2, 1, 0]
     },
     "waiting": {
       "row": 6,

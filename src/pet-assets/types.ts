@@ -10,6 +10,7 @@ export interface PetAnimation {
   row: number;
   frames: number;
   durationsMs: number[];
+  frameColumns?: number[];
 }
 
 export interface PetAtlas {

@@ -22,16 +22,23 @@ pub struct AppPreferences {
     pub version: u8,
     pub scale: f64,
     pub always_on_top: bool,
+    #[serde(default = "default_true")]
+    pub speech_bubbles_enabled: bool,
     pub current_pet: String,
     pub position: Option<SavedPosition>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for AppPreferences {
     fn default() -> Self {
         Self {
-            version: 2,
+            version: 3,
             scale: 1.0,
             always_on_top: true,
+            speech_bubbles_enabled: true,
             current_pet: "huangji-daxiao".to_string(),
             position: None,
         }
@@ -58,13 +65,16 @@ impl PersistentPreferences {
             .and_then(|contents| serde_json::from_str::<AppPreferences>(&contents).ok())
             .map(|mut preferences| {
                 if preferences.version == 1 {
-                    preferences.version = 2;
                     preferences.scale = (preferences.scale / 0.75).clamp(0.4, 2.0);
+                }
+                if preferences.version <= 2 {
+                    preferences.version = 3;
+                    preferences.speech_bubbles_enabled = true;
                     migrated = true;
                 }
                 preferences
             })
-            .filter(|preferences| preferences.version == 2)
+            .filter(|preferences| preferences.version == 3)
             .unwrap_or_default();
         let state = Self {
             path: Arc::new(path),
@@ -160,9 +170,10 @@ mod tests {
         let state = PersistentPreferences::load(temporary_preferences_path());
         let preferences = state.snapshot();
 
-        assert_eq!(preferences.version, 2);
+        assert_eq!(preferences.version, 3);
         assert_eq!(preferences.current_pet, "huangji-daxiao");
         assert!(preferences.always_on_top);
+        assert!(preferences.speech_bubbles_enabled);
     }
 
     #[test]
@@ -198,8 +209,32 @@ mod tests {
         .expect("legacy preferences should be written");
 
         let migrated = PersistentPreferences::load(path.clone()).snapshot();
-        assert_eq!(migrated.version, 2);
+        assert_eq!(migrated.version, 3);
         assert_eq!(migrated.scale, 1.0);
+        assert!(migrated.speech_bubbles_enabled);
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn version_two_adds_enabled_speech_bubbles() {
+        let path = temporary_preferences_path();
+        fs::write(
+            &path,
+            r#"{
+              "version": 2,
+              "scale": 1.25,
+              "alwaysOnTop": false,
+              "currentPet": "huangji-daxiao",
+              "position": null
+            }"#,
+        )
+        .expect("version two preferences should be written");
+
+        let migrated = PersistentPreferences::load(path.clone()).snapshot();
+        assert_eq!(migrated.version, 3);
+        assert_eq!(migrated.scale, 1.25);
+        assert!(!migrated.always_on_top);
+        assert!(migrated.speech_bubbles_enabled);
         let _ = fs::remove_file(path);
     }
 }

@@ -1,4 +1,5 @@
 import { AnimationTimeline } from "@/pet-core/AnimationTimeline";
+import { resolveAnimationFrameColumns } from "@/pet-core/AnimationFrameSequence";
 import type { LoadedPetAsset } from "@/pet-assets/types";
 
 interface SpriteFrame {
@@ -38,7 +39,7 @@ export class PixiPetRenderer {
     const animation = this.asset.atlas.animations[animationName];
     if (!animation) throw new Error(`未找到动画：${animationName}`);
 
-    this.frames = Array.from({ length: animation.frames }, (_, column) => ({
+    this.frames = resolveAnimationFrameColumns(animation).map((column) => ({
       row: animation.row,
       column,
     }));
