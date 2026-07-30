@@ -30,6 +30,10 @@ export function hideAssistantWindow(): Promise<void> {
   return invoke("hide_assistant_window");
 }
 
+export function syncAssistantWindowSize(mode: "panel" | "bubble"): Promise<boolean> {
+  return invoke<boolean>("sync_assistant_window_size", { mode });
+}
+
 export function requestPetInteraction(animationName: string): Promise<void> {
   return invoke("request_pet_interaction", { animationName });
 }

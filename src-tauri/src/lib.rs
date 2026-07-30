@@ -278,6 +278,7 @@ pub fn run() {
             assistant::get_assistant_payload,
             assistant::show_speech_bubble,
             assistant::hide_assistant_window,
+            assistant::sync_assistant_window_size,
             assistant::request_pet_interaction
         ])
         .setup(|app| {

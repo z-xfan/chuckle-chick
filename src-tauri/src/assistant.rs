@@ -155,6 +155,30 @@ pub fn hide_assistant_window(
 }
 
 #[tauri::command]
+pub fn sync_assistant_window_size(
+    mode: String,
+    window: WebviewWindow,
+    assistant_state: State<'_, AssistantWindowState>,
+) -> Result<bool, String> {
+    let requested_mode = match mode.as_str() {
+        "panel" => AssistantMode::Panel,
+        "bubble" => AssistantMode::Bubble,
+        _ => return Err("不支持的辅助窗口模式".to_string()),
+    };
+    if current_mode(&assistant_state)? != requested_mode {
+        return Ok(false);
+    }
+
+    let assistant = assistant_window(&window)?;
+    let (width, height) = logical_size(requested_mode);
+    assistant
+        .set_size(Size::Logical(LogicalSize::new(width, height)))
+        .map_err(|error| error.to_string())?;
+    position_window(&window, &assistant, requested_mode)?;
+    Ok(true)
+}
+
+#[tauri::command]
 pub fn request_pet_interaction(
     animation_name: String,
     window: WebviewWindow,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 import PetPortrait from "@/components/PetPortrait.vue";
 import { SpeechBubbleQueue, type SpeechBubble } from "@/pet-core/SpeechBubbleQueue";
@@ -9,6 +9,8 @@ import {
   listenAssistantPayload,
   requestPetInteraction,
   showSpeechBubble,
+  syncAssistantWindowSize,
+  toggleQuickPanel,
   type AssistantPayload,
 } from "@/platform/assistant";
 import {
@@ -25,6 +27,7 @@ const busy = ref(false);
 const errorMessage = ref("");
 const interactionMessage = ref("");
 const bubbleQueue = new SpeechBubbleQueue();
+const GREETING_MESSAGE = "江湖路远，今天也一起开心闯荡吧！";
 let bubbleTimer: number | undefined;
 let blurTimer: number | undefined;
 let stopListening: (() => void) | undefined;
@@ -54,14 +57,44 @@ function handlePayload(payload: AssistantPayload): void {
     interactionMessage.value = "";
     errorMessage.value = "";
     void loadPanelPreferences();
+    void syncWindowSize("panel");
     return;
   }
 
+  const previousMode = mode.value;
   const result = bubbleQueue.enqueue(payload.message, payload.durationMs);
-  if (result === "empty" || result === "duplicate") return;
+  if (result === "empty") return;
+  if (result === "duplicate") {
+    if (previousMode === "panel") {
+      void restorePanelAfterRejectedBubble();
+    } else if (previousMode === "hidden") {
+      void closeAssistant();
+    }
+    return;
+  }
   bubblePlacement.value = payload.placement;
   mode.value = "bubble";
+  void syncWindowSize("bubble");
   if (!currentBubble.value) showCurrentBubble();
+}
+
+async function syncWindowSize(targetMode: "panel" | "bubble"): Promise<void> {
+  await nextTick();
+  try {
+    await syncAssistantWindowSize(targetMode);
+  } catch (error) {
+    if (targetMode === "panel") {
+      errorMessage.value = error instanceof Error ? error.message : String(error);
+    }
+  }
+}
+
+async function restorePanelAfterRejectedBubble(): Promise<void> {
+  try {
+    await toggleQuickPanel();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : String(error);
+  }
 }
 
 async function loadPanelPreferences(): Promise<void> {
@@ -113,7 +146,11 @@ async function greetPet(): Promise<void> {
   interactionMessage.value = "";
   try {
     await requestPetInteraction("waving");
-    const shown = await showSpeechBubble("江湖路远，今天也一起开心闯荡吧！");
+    if (bubbleQueue.isDuplicate(GREETING_MESSAGE)) {
+      interactionMessage.value = "黄鸡开心地向你挥了挥翅膀";
+      return;
+    }
+    const shown = await showSpeechBubble(GREETING_MESSAGE);
     if (!shown) interactionMessage.value = "黄鸡开心地向你挥了挥翅膀";
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error);

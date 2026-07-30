@@ -29,11 +29,7 @@ export class SpeechBubbleQueue {
     const normalizedMessage = message.trim();
     if (!normalizedMessage) return "empty";
 
-    this.removeExpiredHistory(now);
-    const previousTime = this.recentMessages.get(normalizedMessage);
-    if (previousTime !== undefined && now - previousTime < this.duplicateWindowMs) {
-      return "duplicate";
-    }
+    if (this.isDuplicate(normalizedMessage, now)) return "duplicate";
 
     const bubble = {
       message: normalizedMessage,
@@ -49,6 +45,14 @@ export class SpeechBubbleQueue {
     if (this.waiting.length >= this.maxWaiting) this.waiting.shift();
     this.waiting.push(bubble);
     return "accepted";
+  }
+
+  isDuplicate(message: string, now = Date.now()): boolean {
+    const normalizedMessage = message.trim();
+    if (!normalizedMessage) return false;
+    this.removeExpiredHistory(now);
+    const previousTime = this.recentMessages.get(normalizedMessage);
+    return previousTime !== undefined && now - previousTime < this.duplicateWindowMs;
   }
 
   get current(): SpeechBubble | undefined {

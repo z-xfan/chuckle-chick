@@ -17,7 +17,9 @@ describe("SpeechBubbleQueue", () => {
     const queue = new SpeechBubbleQueue();
     queue.enqueue("你好", undefined, 10_000);
 
+    expect(queue.isDuplicate("你好", 39_999)).toBe(true);
     expect(queue.enqueue("你好", undefined, 39_999)).toBe("duplicate");
+    expect(queue.isDuplicate("你好", 40_000)).toBe(false);
     expect(queue.enqueue("你好", undefined, 40_000)).toBe("accepted");
   });
 
