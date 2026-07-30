@@ -24,6 +24,8 @@ pub struct AppPreferences {
     pub always_on_top: bool,
     #[serde(default = "default_true")]
     pub speech_bubbles_enabled: bool,
+    #[serde(default)]
+    pub monitored_servers: Vec<String>,
     pub current_pet: String,
     pub position: Option<SavedPosition>,
 }
@@ -35,10 +37,11 @@ fn default_true() -> bool {
 impl Default for AppPreferences {
     fn default() -> Self {
         Self {
-            version: 3,
+            version: 4,
             scale: 1.0,
             always_on_top: true,
             speech_bubbles_enabled: true,
+            monitored_servers: Vec::new(),
             current_pet: "huangji-daxiao".to_string(),
             position: None,
         }
@@ -68,13 +71,17 @@ impl PersistentPreferences {
                     preferences.scale = (preferences.scale / 0.75).clamp(0.4, 2.0);
                 }
                 if preferences.version <= 2 {
-                    preferences.version = 3;
                     preferences.speech_bubbles_enabled = true;
+                    migrated = true;
+                }
+                if preferences.version <= 3 {
+                    preferences.version = 4;
+                    preferences.monitored_servers = Vec::new();
                     migrated = true;
                 }
                 preferences
             })
-            .filter(|preferences| preferences.version == 3)
+            .filter(|preferences| preferences.version == 4)
             .unwrap_or_default();
         let state = Self {
             path: Arc::new(path),
@@ -170,10 +177,11 @@ mod tests {
         let state = PersistentPreferences::load(temporary_preferences_path());
         let preferences = state.snapshot();
 
-        assert_eq!(preferences.version, 3);
+        assert_eq!(preferences.version, 4);
         assert_eq!(preferences.current_pet, "huangji-daxiao");
         assert!(preferences.always_on_top);
         assert!(preferences.speech_bubbles_enabled);
+        assert!(preferences.monitored_servers.is_empty());
     }
 
     #[test]
@@ -209,7 +217,7 @@ mod tests {
         .expect("legacy preferences should be written");
 
         let migrated = PersistentPreferences::load(path.clone()).snapshot();
-        assert_eq!(migrated.version, 3);
+        assert_eq!(migrated.version, 4);
         assert_eq!(migrated.scale, 1.0);
         assert!(migrated.speech_bubbles_enabled);
         let _ = fs::remove_file(path);
@@ -231,7 +239,7 @@ mod tests {
         .expect("version two preferences should be written");
 
         let migrated = PersistentPreferences::load(path.clone()).snapshot();
-        assert_eq!(migrated.version, 3);
+        assert_eq!(migrated.version, 4);
         assert_eq!(migrated.scale, 1.25);
         assert!(!migrated.always_on_top);
         assert!(migrated.speech_bubbles_enabled);

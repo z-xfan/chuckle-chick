@@ -8,7 +8,9 @@ use tauri::{
 use crate::preferences::PersistentPreferences;
 
 const PANEL_WIDTH: f64 = 320.0;
-const PANEL_HEIGHT: f64 = 300.0;
+const PANEL_HEIGHT: f64 = 350.0;
+const PANEL_DETAIL_WIDTH: f64 = 360.0;
+const PANEL_DETAIL_HEIGHT: f64 = 420.0;
 const BUBBLE_WIDTH: f64 = 260.0;
 const BUBBLE_HEIGHT: f64 = 112.0;
 const WINDOW_GAP: f64 = 12.0;
@@ -160,9 +162,14 @@ pub fn sync_assistant_window_size(
     window: WebviewWindow,
     assistant_state: State<'_, AssistantWindowState>,
 ) -> Result<bool, String> {
-    let requested_mode = match mode.as_str() {
-        "panel" => AssistantMode::Panel,
-        "bubble" => AssistantMode::Bubble,
+    let (requested_mode, width, height) = match mode.as_str() {
+        "panel" => (AssistantMode::Panel, PANEL_WIDTH, PANEL_HEIGHT),
+        "panelDetail" => (
+            AssistantMode::Panel,
+            PANEL_DETAIL_WIDTH,
+            PANEL_DETAIL_HEIGHT,
+        ),
+        "bubble" => (AssistantMode::Bubble, BUBBLE_WIDTH, BUBBLE_HEIGHT),
         _ => return Err("不支持的辅助窗口模式".to_string()),
     };
     if current_mode(&assistant_state)? != requested_mode {
@@ -170,11 +177,10 @@ pub fn sync_assistant_window_size(
     }
 
     let assistant = assistant_window(&window)?;
-    let (width, height) = logical_size(requested_mode);
     assistant
         .set_size(Size::Logical(LogicalSize::new(width, height)))
         .map_err(|error| error.to_string())?;
-    position_window(&window, &assistant, requested_mode)?;
+    position_window_with_size(&window, &assistant, requested_mode, width, height)?;
     Ok(true)
 }
 
@@ -205,6 +211,41 @@ pub fn hide_for_app(
         hide_window(&window, assistant_state)?;
     }
     Ok(())
+}
+
+pub fn show_speech_bubble_for_app(
+    app: &tauri::AppHandle,
+    message: String,
+    duration_ms: u64,
+) -> Result<bool, String> {
+    let preferences = app.state::<PersistentPreferences>();
+    if !preferences.snapshot().speech_bubbles_enabled {
+        return Ok(false);
+    }
+    let message = message.trim();
+    if message.is_empty() {
+        return Ok(false);
+    }
+    let source_window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "找不到宠物窗口".to_string())?;
+    let assistant = app
+        .get_webview_window("assistant")
+        .ok_or_else(|| "找不到快捷功能窗口".to_string())?;
+    let state = app.state::<AssistantWindowState>();
+    show_window(
+        &source_window,
+        &assistant,
+        AssistantMode::Bubble,
+        AssistantPayload::Bubble {
+            message: message.to_string(),
+            duration_ms: duration_ms.clamp(2_000, 8_000),
+            placement: BubblePlacement::Above,
+        },
+        preferences.snapshot().always_on_top,
+        &state,
+    )?;
+    Ok(true)
 }
 
 fn assistant_window(window: &WebviewWindow) -> Result<WebviewWindow, String> {
@@ -306,6 +347,23 @@ fn position_window(
     assistant: &WebviewWindow,
     mode: AssistantMode,
 ) -> Result<Option<BubblePlacement>, String> {
+    let (logical_width, logical_height) = logical_size(mode);
+    position_window_with_size(
+        source_window,
+        assistant,
+        mode,
+        logical_width,
+        logical_height,
+    )
+}
+
+fn position_window_with_size(
+    source_window: &WebviewWindow,
+    assistant: &WebviewWindow,
+    mode: AssistantMode,
+    logical_width: f64,
+    logical_height: f64,
+) -> Result<Option<BubblePlacement>, String> {
     let pet = source_window
         .app_handle()
         .get_webview_window("main")
@@ -330,7 +388,6 @@ fn position_window(
         .ok_or_else(|| "找不到可用显示器".to_string())?;
     let area = monitor.work_area();
     let scale_factor = monitor.scale_factor().max(0.1);
-    let (logical_width, logical_height) = logical_size(mode);
     let assistant_size = AssistantSize {
         width: (logical_width * scale_factor).round() as u32,
         height: (logical_height * scale_factor).round() as u32,

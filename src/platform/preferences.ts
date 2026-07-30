@@ -5,6 +5,7 @@ export interface AppPreferences {
   scale: number;
   alwaysOnTop: boolean;
   speechBubblesEnabled: boolean;
+  monitoredServers: string[];
   currentPet: string;
 }
 

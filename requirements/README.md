@@ -54,3 +54,4 @@ REQ-0002-desktop-app-foundation.md
 | [REQ-0005](REQ-0005-hover-animation.md) | 鼠标悬停动画反馈 | 开发中 |
 | [REQ-0006](REQ-0006-windows-x64-ci-build.md) | Windows x64 自动构建 | 已完成 |
 | [REQ-0007](REQ-0007-pet-quick-panel-and-speech-bubbles.md) | 宠物点击、气泡与快捷功能面板 | 待验收 |
+| [REQ-0008](REQ-0008-jx3-news-skill-changes-and-server-status.md) | 剑网 3 公告、技改与开服状态 | 待验收 |

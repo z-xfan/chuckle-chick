@@ -1,4 +1,5 @@
 mod assistant;
+mod jx3;
 mod preferences;
 mod tray;
 
@@ -264,6 +265,7 @@ fn reset_pet_position(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_preferences,
             set_pet_always_on_top,
@@ -279,7 +281,14 @@ pub fn run() {
             assistant::show_speech_bubble,
             assistant::hide_assistant_window,
             assistant::sync_assistant_window_size,
-            assistant::request_pet_interaction
+            assistant::request_pet_interaction,
+            jx3::get_cached_jx3_news_page,
+            jx3::fetch_jx3_news_page,
+            jx3::get_jx3_server_options,
+            jx3::check_jx3_server,
+            jx3::set_jx3_server_monitoring,
+            jx3::stop_all_jx3_server_monitoring,
+            jx3::open_jx3_official_url
         ])
         .setup(|app| {
             let config_path = app.path().app_config_dir()?.join("preferences.json");
@@ -287,6 +296,10 @@ pub fn run() {
             let preferences = state.snapshot();
             app.manage(state.clone());
             app.manage(AssistantWindowState::default());
+            let jx3_state =
+                jx3::Jx3State::load(app.path().app_config_dir()?.join("jx3-news-cache.json"));
+            app.manage(jx3_state.clone());
+            tauri::async_runtime::spawn(jx3::run_monitor_loop(app.handle().clone(), jx3_state));
 
             let pet_window = app
                 .get_webview_window("main")

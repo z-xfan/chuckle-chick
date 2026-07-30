@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
+import Jx3NewsView from "@/components/Jx3NewsView.vue";
+import Jx3ServerView from "@/components/Jx3ServerView.vue";
 import PetPortrait from "@/components/PetPortrait.vue";
 import { SpeechBubbleQueue, type SpeechBubble } from "@/pet-core/SpeechBubbleQueue";
 import {
@@ -20,6 +22,7 @@ import {
 } from "@/platform/preferences";
 
 const mode = ref<"hidden" | "panel" | "bubble">("hidden");
+const panelPage = ref<"home" | "announcement" | "skillChange" | "server">("home");
 const currentBubble = ref<SpeechBubble>();
 const bubblePlacement = ref<"above" | "below">("above");
 const alwaysOnTop = ref(true);
@@ -54,6 +57,7 @@ function handlePayload(payload: AssistantPayload): void {
     bubbleQueue.clear();
     currentBubble.value = undefined;
     mode.value = "panel";
+    panelPage.value = "home";
     interactionMessage.value = "";
     errorMessage.value = "";
     void loadPanelPreferences();
@@ -78,15 +82,31 @@ function handlePayload(payload: AssistantPayload): void {
   if (!currentBubble.value) showCurrentBubble();
 }
 
-async function syncWindowSize(targetMode: "panel" | "bubble"): Promise<void> {
+async function syncWindowSize(
+  targetMode: "panel" | "panelDetail" | "bubble",
+): Promise<void> {
   await nextTick();
   try {
     await syncAssistantWindowSize(targetMode);
   } catch (error) {
-    if (targetMode === "panel") {
+    if (targetMode !== "bubble") {
       errorMessage.value = error instanceof Error ? error.message : String(error);
     }
   }
+}
+
+async function openPanelPage(
+  page: "announcement" | "skillChange" | "server",
+): Promise<void> {
+  panelPage.value = page;
+  errorMessage.value = "";
+  interactionMessage.value = "";
+  await syncWindowSize("panelDetail");
+}
+
+async function returnToPanelHome(): Promise<void> {
+  panelPage.value = "home";
+  await syncWindowSize("panel");
 }
 
 async function restorePanelAfterRejectedBubble(): Promise<void> {
@@ -215,6 +235,10 @@ function handleWindowBlur(): void {
 function handleKeyDown(event: KeyboardEvent): void {
   if (event.key !== "Escape" || mode.value === "hidden") return;
   event.preventDefault();
+  if (mode.value === "panel" && panelPage.value !== "home") {
+    void returnToPanelHome();
+    return;
+  }
   void closeAssistant();
 }
 </script>
@@ -233,7 +257,11 @@ function handleKeyDown(event: KeyboardEvent): void {
       <i aria-hidden="true"></i>
     </button>
 
-    <section v-else-if="mode === 'panel'" class="quick-panel" aria-label="宠物快捷功能">
+    <section
+      v-else-if="mode === 'panel' && panelPage === 'home'"
+      class="quick-panel"
+      aria-label="宠物快捷功能"
+    >
       <header class="quick-panel__header">
         <span class="quick-panel__avatar">
           <PetPortrait :size="34" />
@@ -263,6 +291,21 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
       </div>
 
+      <div class="quick-panel__jx3" aria-label="剑网 3 功能">
+        <button type="button" @click="openPanelPage('announcement')">
+          <span aria-hidden="true">📜</span>
+          <strong>公告</strong>
+        </button>
+        <button type="button" @click="openPanelPage('skillChange')">
+          <span aria-hidden="true">⚔️</span>
+          <strong>技改</strong>
+        </button>
+        <button type="button" @click="openPanelPage('server')">
+          <span aria-hidden="true">🟢</span>
+          <strong>开服</strong>
+        </button>
+      </div>
+
       <label class="quick-panel__setting">
         <span>
           <strong>窗口置顶</strong>
@@ -287,6 +330,24 @@ function handleKeyDown(event: KeyboardEvent): void {
         打开宠物设置
       </button>
     </section>
+
+    <Jx3NewsView
+      v-else-if="mode === 'panel' && panelPage === 'announcement'"
+      kind="announcement"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
+    <Jx3NewsView
+      v-else-if="mode === 'panel' && panelPage === 'skillChange'"
+      kind="skillChange"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
+    <Jx3ServerView
+      v-else-if="mode === 'panel' && panelPage === 'server'"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
   </main>
 </template>
 
@@ -429,6 +490,7 @@ function handleKeyDown(event: KeyboardEvent): void {
 }
 
 .quick-panel__actions button,
+.quick-panel__jx3 button,
 .quick-panel__settings {
   border: 1px solid rgb(217 119 6 / 18%);
   border-radius: 13px;
@@ -448,6 +510,29 @@ function handleKeyDown(event: KeyboardEvent): void {
 
 .quick-panel__actions button span {
   font-size: 18px;
+}
+
+.quick-panel__jx3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.quick-panel__jx3 button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 7px 5px;
+}
+
+.quick-panel__jx3 button span {
+  font-size: 14px;
+}
+
+.quick-panel__jx3 button strong {
+  font-size: 11px;
 }
 
 .quick-panel__setting {
