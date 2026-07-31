@@ -37,6 +37,27 @@ export interface ServerStatus {
   checkedAt: number;
 }
 
+export interface CalendarItem {
+  id: string;
+  category: string;
+  name: string;
+}
+
+export interface CalendarDay {
+  date: string;
+  weekday: string;
+  predicted: boolean;
+  items: CalendarItem[];
+}
+
+export interface CalendarView {
+  fetchedAt: number;
+  source: string;
+  stale: boolean;
+  incomplete: boolean;
+  days: CalendarDay[];
+}
+
 export function getCachedNewsPage(kind: NewsKind, page: number): Promise<NewsPage | null> {
   return invoke("get_cached_jx3_news_page", { kind, page });
 }
@@ -70,4 +91,12 @@ export function stopAllServerMonitoring(): Promise<void> {
 
 export function openOfficialNews(url: string): Promise<void> {
   return invoke("open_jx3_official_url", { url });
+}
+
+export function getCachedCalendar(): Promise<CalendarView | null> {
+  return invoke("get_cached_jx3_calendar");
+}
+
+export function fetchCalendar(force = false): Promise<CalendarView> {
+  return invoke("fetch_jx3_calendar", { force });
 }

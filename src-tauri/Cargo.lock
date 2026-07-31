@@ -486,6 +486,7 @@ dependencies = [
 name = "chuckle-chick"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "encoding_rs",
  "objc2-app-kit",
  "reqwest 0.12.28",

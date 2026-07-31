@@ -1,5 +1,6 @@
 mod assistant;
 mod jx3;
+mod jx3_calendar;
 mod preferences;
 mod tray;
 
@@ -288,7 +289,9 @@ pub fn run() {
             jx3::check_jx3_server,
             jx3::set_jx3_server_monitoring,
             jx3::stop_all_jx3_server_monitoring,
-            jx3::open_jx3_official_url
+            jx3::open_jx3_official_url,
+            jx3_calendar::get_cached_jx3_calendar,
+            jx3_calendar::fetch_jx3_calendar
         ])
         .setup(|app| {
             let config_path = app.path().app_config_dir()?.join("preferences.json");
@@ -299,6 +302,9 @@ pub fn run() {
             let jx3_state =
                 jx3::Jx3State::load(app.path().app_config_dir()?.join("jx3-news-cache.json"));
             app.manage(jx3_state.clone());
+            app.manage(jx3_calendar::Jx3CalendarState::load(
+                app.path().app_config_dir()?.join("jx3-calendar-cache.json"),
+            ));
             tauri::async_runtime::spawn(jx3::run_monitor_loop(app.handle().clone(), jx3_state));
 
             let pet_window = app

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
+import Jx3CalendarView from "@/components/Jx3CalendarView.vue";
 import Jx3NewsView from "@/components/Jx3NewsView.vue";
 import Jx3ServerView from "@/components/Jx3ServerView.vue";
 import PetPortrait from "@/components/PetPortrait.vue";
@@ -22,7 +23,9 @@ import {
 } from "@/platform/preferences";
 
 const mode = ref<"hidden" | "panel" | "bubble">("hidden");
-const panelPage = ref<"home" | "announcement" | "skillChange" | "server">("home");
+const panelPage = ref<"home" | "announcement" | "skillChange" | "server" | "calendar">(
+  "home",
+);
 const currentBubble = ref<SpeechBubble>();
 const bubblePlacement = ref<"above" | "below">("above");
 const alwaysOnTop = ref(true);
@@ -96,7 +99,7 @@ async function syncWindowSize(
 }
 
 async function openPanelPage(
-  page: "announcement" | "skillChange" | "server",
+  page: "announcement" | "skillChange" | "server" | "calendar",
 ): Promise<void> {
   panelPage.value = page;
   errorMessage.value = "";
@@ -304,6 +307,10 @@ function handleKeyDown(event: KeyboardEvent): void {
           <span aria-hidden="true">🟢</span>
           <strong>开服</strong>
         </button>
+        <button type="button" @click="openPanelPage('calendar')">
+          <span aria-hidden="true">🗓️</span>
+          <strong>日历</strong>
+        </button>
       </div>
 
       <label class="quick-panel__setting">
@@ -345,6 +352,11 @@ function handleKeyDown(event: KeyboardEvent): void {
     />
     <Jx3ServerView
       v-else-if="mode === 'panel' && panelPage === 'server'"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
+    <Jx3CalendarView
+      v-else-if="mode === 'panel' && panelPage === 'calendar'"
       @back="returnToPanelHome"
       @close="closeAssistant"
     />
@@ -514,7 +526,7 @@ function handleKeyDown(event: KeyboardEvent): void {
 
 .quick-panel__jx3 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 7px;
 }
 
