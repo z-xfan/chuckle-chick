@@ -57,3 +57,4 @@ REQ-0002-desktop-app-foundation.md
 | [REQ-0008](REQ-0008-jx3-news-skill-changes-and-server-status.md) | 剑网 3 公告、技改与开服状态 | 待验收 |
 | [REQ-0009](REQ-0009-jx3-calendar-and-today-activities.md) | 剑网 3 日历与今日活动 | 待验收 |
 | [REQ-0011](REQ-0011-jx3-map-events.md) | 剑网 3 地图事件查询 | 待验收 |
+| [REQ-0012](REQ-0012-jx3-flirty-lines.md) | 骚话文案 | 待验收 |

@@ -78,6 +78,15 @@ export interface MapEventView {
   items: MapEventItem[];
 }
 
+export type FlirtyLineKind = "random" | "devoted";
+
+export interface FlirtyLineView {
+  kind: FlirtyLineKind;
+  text: string;
+  source: string;
+  fetchedAt: number;
+}
+
 export function getCachedNewsPage(kind: NewsKind, page: number): Promise<NewsPage | null> {
   return invoke("get_cached_jx3_news_page", { kind, page });
 }
@@ -132,4 +141,8 @@ export function fetchMapEvents(
   force = false,
 ): Promise<MapEventView> {
   return invoke("fetch_jx3_map_events", { category, force });
+}
+
+export function fetchFlirtyLine(kind: FlirtyLineKind): Promise<FlirtyLineView> {
+  return invoke("fetch_jx3_flirty_line", { kind });
 }

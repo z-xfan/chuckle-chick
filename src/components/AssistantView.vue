@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 import Jx3CalendarView from "@/components/Jx3CalendarView.vue";
+import Jx3FlirtyLinesView from "@/components/Jx3FlirtyLinesView.vue";
 import Jx3MapEventsView from "@/components/Jx3MapEventsView.vue";
 import Jx3NewsView from "@/components/Jx3NewsView.vue";
 import Jx3ServerView from "@/components/Jx3ServerView.vue";
@@ -25,7 +26,13 @@ import {
 
 const mode = ref<"hidden" | "panel" | "bubble">("hidden");
 const panelPage = ref<
-  "home" | "announcement" | "skillChange" | "server" | "calendar" | "mapEvents"
+  | "home"
+  | "announcement"
+  | "skillChange"
+  | "server"
+  | "calendar"
+  | "mapEvents"
+  | "flirtyLines"
 >("home");
 const currentBubble = ref<SpeechBubble>();
 const bubblePlacement = ref<"above" | "below">("above");
@@ -100,7 +107,13 @@ async function syncWindowSize(
 }
 
 async function openPanelPage(
-  page: "announcement" | "skillChange" | "server" | "calendar" | "mapEvents",
+  page:
+    | "announcement"
+    | "skillChange"
+    | "server"
+    | "calendar"
+    | "mapEvents"
+    | "flirtyLines",
 ): Promise<void> {
   panelPage.value = page;
   errorMessage.value = "";
@@ -321,6 +334,10 @@ function handleKeyDown(event: KeyboardEvent): void {
             <span aria-hidden="true">🗺️</span>
             <strong>地图事件</strong>
           </button>
+          <button type="button" @click="openPanelPage('flirtyLines')">
+            <span aria-hidden="true">💬</span>
+            <strong>骚话</strong>
+          </button>
         </div>
       </div>
 
@@ -373,6 +390,11 @@ function handleKeyDown(event: KeyboardEvent): void {
     />
     <Jx3MapEventsView
       v-else-if="mode === 'panel' && panelPage === 'mapEvents'"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
+    <Jx3FlirtyLinesView
+      v-else-if="mode === 'panel' && panelPage === 'flirtyLines'"
       @back="returnToPanelHome"
       @close="closeAssistant"
     />
@@ -579,10 +601,6 @@ function handleKeyDown(event: KeyboardEvent): void {
   min-height: 34px;
   padding: 6px 5px;
   white-space: nowrap;
-}
-
-.quick-panel__jx3 button:nth-last-child(-n + 2) {
-  grid-column: span 3;
 }
 
 .quick-panel__jx3 button span {
