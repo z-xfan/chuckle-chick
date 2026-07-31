@@ -19,8 +19,43 @@ const loading = ref(false);
 const errorMessage = ref("");
 const staleMessage = ref("");
 
+const DAILY_CATEGORIES = new Set(["大战", "战场", "阵营矿车", "门派事件", "驰援"]);
+const CATEGORY_META: Record<string, { marker: string; tone: string }> = {
+  大战: { marker: "战", tone: "red" },
+  战场: { marker: "场", tone: "orange" },
+  阵营矿车: { marker: "矿", tone: "amber" },
+  门派事件: { marker: "派", tone: "violet" },
+  驰援: { marker: "援", tone: "teal" },
+  美人图: { marker: "美", tone: "rose" },
+  宠物福缘: { marker: "宠", tone: "green" },
+  "家园声望·加倍道具": { marker: "园", tone: "sky" },
+  世界boss: { marker: "世", tone: "red" },
+  "武林通鉴·公共任务": { marker: "公", tone: "blue" },
+  "武林通鉴·团队秘境": { marker: "团", tone: "indigo" },
+};
+
 const selectedDay = computed<CalendarDay | undefined>(() =>
   calendar.value?.days.find((day) => day.date === selectedDate.value),
+);
+const selectedGroups = computed(() => {
+  const groups = new Map<string, CalendarDay["items"]>();
+  for (const item of selectedDay.value?.items ?? []) {
+    const group = groups.get(item.category) ?? [];
+    group.push(item);
+    groups.set(item.category, group);
+  }
+  return Array.from(groups, ([category, items]) => ({
+    category,
+    items,
+    marker: CATEGORY_META[category]?.marker ?? category.slice(0, 1),
+    tone: CATEGORY_META[category]?.tone ?? "neutral",
+  }));
+});
+const dailyGroups = computed(() =>
+  selectedGroups.value.filter((group) => DAILY_CATEGORIES.has(group.category)),
+);
+const extraGroups = computed(() =>
+  selectedGroups.value.filter((group) => !DAILY_CATEGORIES.has(group.category)),
 );
 
 onMounted(() => {
@@ -83,6 +118,10 @@ function formatFetchedAt(value: number): string {
     minute: "2-digit",
   });
 }
+
+function groupItemCount(groups: typeof selectedGroups.value): number {
+  return groups.reduce((total, group) => total + group.items.length, 0);
+}
 </script>
 
 <template>
@@ -140,12 +179,72 @@ function formatFetchedAt(value: number): string {
       <div v-if="selectedDay.items.length === 0" class="calendar-page__empty">
         这一天暂无可用数据
       </div>
-      <ul v-else>
-        <li v-for="item in selectedDay.items" :key="item.id">
-          <span>{{ item.category }}</span>
-          <strong>{{ item.name }}</strong>
-        </li>
-      </ul>
+      <div v-else class="calendar-content">
+        <section v-if="dailyGroups.length" class="activity-section">
+          <header class="activity-section__header">
+            <span><b>日</b><strong>日常活动</strong></span>
+            <small>{{ groupItemCount(dailyGroups) }} 项</small>
+          </header>
+          <div class="activity-grid">
+            <article
+              v-for="group in dailyGroups"
+              :key="group.category"
+              class="activity-card"
+              :class="[
+                `activity-card--${group.tone}`,
+                { 'activity-card--wide': group.category === '大战' },
+              ]"
+            >
+              <header>
+                <span>{{ group.marker }}</span>
+                <strong>{{ group.category }}</strong>
+              </header>
+              <div class="activity-tags">
+                <span v-for="item in group.items" :key="item.id">{{ item.name }}</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section v-if="extraGroups.length || selectedDay.weeklyPending" class="activity-section">
+          <header class="activity-section__header">
+            <span><b>轮</b><strong>轮换与周常</strong></span>
+            <small>
+              {{ groupItemCount(extraGroups) }} 项
+              <template v-if="selectedDay.weeklyPending">· 周常待公布</template>
+            </small>
+          </header>
+          <div class="activity-grid">
+            <article
+              v-for="group in extraGroups"
+              :key="group.category"
+              class="activity-card"
+              :class="[
+                `activity-card--${group.tone}`,
+                { 'activity-card--wide': group.items.length >= 3 },
+              ]"
+            >
+              <header>
+                <span>{{ group.marker }}</span>
+                <strong>{{ group.category }}</strong>
+              </header>
+              <div class="activity-tags">
+                <span v-for="item in group.items" :key="item.id">{{ item.name }}</span>
+              </div>
+            </article>
+            <article
+              v-if="selectedDay.weeklyPending"
+              class="activity-card activity-card--pending activity-card--wide"
+            >
+              <header>
+                <span>周</span>
+                <strong>下周武林通鉴</strong>
+              </header>
+              <p>暂未公布</p>
+            </article>
+          </div>
+        </section>
+      </div>
     </article>
 
     <footer v-if="calendar" class="calendar-page__footer">
@@ -265,39 +364,176 @@ function formatFetchedAt(value: number): string {
   font-size: 9px;
 }
 
-.calendar-day ul {
+.calendar-content {
   min-height: 0;
   flex: 1;
-  margin: 0;
-  padding: 0;
+  padding-right: 2px;
   overflow-y: auto;
-  list-style: none;
 }
 
-.calendar-day li {
-  display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+.activity-section + .activity-section {
+  margin-top: 10px;
+}
+
+.activity-section__header {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 10px;
-  padding: 8px 9px;
-  background: rgb(255 255 255 / 65%);
+  justify-content: space-between;
+  margin-bottom: 5px;
 }
 
-.calendar-day li + li {
-  margin-top: 5px;
+.activity-section__header > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.calendar-day li span {
-  color: #9a5b18;
-  font-size: 10px;
+.activity-section__header b {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  place-items: center;
+  color: #fff;
+  background: #d97706;
+  font-size: 9px;
 }
 
-.calendar-day li strong {
-  overflow: hidden;
+.activity-section__header strong {
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.activity-section__header small {
+  color: #a07145;
+  font-size: 9px;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.activity-card {
+  --card-accent: #a07145;
+  --card-tint: rgb(255 255 255 / 70%);
+
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 16%, transparent);
+  border-radius: 10px;
+  padding: 7px;
+  background: var(--card-tint);
+}
+
+.activity-card--wide {
+  grid-column: 1 / -1;
+}
+
+.activity-card > header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin-bottom: 5px;
+}
+
+.activity-card > header span {
+  display: grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  place-items: center;
+  color: #fff;
+  background: var(--card-accent);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.activity-card > header strong {
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.activity-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.activity-tags span {
+  max-width: 100%;
+  border-radius: 6px;
+  padding: 3px 5px;
+  color: #4b3421;
+  background: rgb(255 255 255 / 75%);
+  font-size: 9px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.activity-card--red {
+  --card-accent: #c2410c;
+  --card-tint: rgb(255 237 213 / 72%);
+}
+
+.activity-card--orange {
+  --card-accent: #ea580c;
+  --card-tint: rgb(255 247 237 / 75%);
+}
+
+.activity-card--amber {
+  --card-accent: #ca8a04;
+  --card-tint: rgb(254 249 195 / 68%);
+}
+
+.activity-card--violet {
+  --card-accent: #7c3aed;
+  --card-tint: rgb(245 243 255 / 74%);
+}
+
+.activity-card--teal {
+  --card-accent: #0f766e;
+  --card-tint: rgb(240 253 250 / 72%);
+}
+
+.activity-card--rose {
+  --card-accent: #e11d48;
+  --card-tint: rgb(255 241 242 / 74%);
+}
+
+.activity-card--green {
+  --card-accent: #15803d;
+  --card-tint: rgb(240 253 244 / 74%);
+}
+
+.activity-card--sky {
+  --card-accent: #0369a1;
+  --card-tint: rgb(240 249 255 / 74%);
+}
+
+.activity-card--blue {
+  --card-accent: #1d4ed8;
+  --card-tint: rgb(239 246 255 / 74%);
+}
+
+.activity-card--indigo {
+  --card-accent: #4338ca;
+  --card-tint: rgb(238 242 255 / 74%);
+}
+
+.activity-card--pending {
+  --card-accent: #78716c;
+  --card-tint: rgb(250 250 249 / 62%);
+
+  border-style: dashed;
+}
+
+.activity-card--pending p {
+  margin: 0;
+  color: #8a6848;
+  font-size: 9px;
 }
 
 .calendar-page__notice {

@@ -47,6 +47,7 @@ export interface CalendarDay {
   date: string;
   weekday: string;
   predicted: boolean;
+  weeklyPending: boolean;
   items: CalendarItem[];
 }
 
