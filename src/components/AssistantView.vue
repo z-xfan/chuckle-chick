@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 import Jx3CalendarView from "@/components/Jx3CalendarView.vue";
+import Jx3MapEventsView from "@/components/Jx3MapEventsView.vue";
 import Jx3NewsView from "@/components/Jx3NewsView.vue";
 import Jx3ServerView from "@/components/Jx3ServerView.vue";
 import PetPortrait from "@/components/PetPortrait.vue";
@@ -23,9 +24,9 @@ import {
 } from "@/platform/preferences";
 
 const mode = ref<"hidden" | "panel" | "bubble">("hidden");
-const panelPage = ref<"home" | "announcement" | "skillChange" | "server" | "calendar">(
-  "home",
-);
+const panelPage = ref<
+  "home" | "announcement" | "skillChange" | "server" | "calendar" | "mapEvents"
+>("home");
 const currentBubble = ref<SpeechBubble>();
 const bubblePlacement = ref<"above" | "below">("above");
 const alwaysOnTop = ref(true);
@@ -99,7 +100,7 @@ async function syncWindowSize(
 }
 
 async function openPanelPage(
-  page: "announcement" | "skillChange" | "server" | "calendar",
+  page: "announcement" | "skillChange" | "server" | "calendar" | "mapEvents",
 ): Promise<void> {
   panelPage.value = page;
   errorMessage.value = "";
@@ -294,23 +295,33 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
       </div>
 
-      <div class="quick-panel__jx3" aria-label="剑网 3 功能">
-        <button type="button" @click="openPanelPage('announcement')">
-          <span aria-hidden="true">📜</span>
-          <strong>公告</strong>
-        </button>
-        <button type="button" @click="openPanelPage('skillChange')">
-          <span aria-hidden="true">⚔️</span>
-          <strong>技改</strong>
-        </button>
-        <button type="button" @click="openPanelPage('server')">
-          <span aria-hidden="true">🟢</span>
-          <strong>开服</strong>
-        </button>
-        <button type="button" @click="openPanelPage('calendar')">
-          <span aria-hidden="true">🗓️</span>
-          <strong>日历</strong>
-        </button>
+      <div class="quick-panel__jx3-section">
+        <div class="quick-panel__section-title">
+          <strong>剑网 3 助手</strong>
+          <small>资讯与活动查询</small>
+        </div>
+        <div class="quick-panel__jx3" aria-label="剑网 3 功能">
+          <button type="button" @click="openPanelPage('announcement')">
+            <span aria-hidden="true">📜</span>
+            <strong>公告</strong>
+          </button>
+          <button type="button" @click="openPanelPage('skillChange')">
+            <span aria-hidden="true">⚔️</span>
+            <strong>技改</strong>
+          </button>
+          <button type="button" @click="openPanelPage('server')">
+            <span aria-hidden="true">🟢</span>
+            <strong>开服</strong>
+          </button>
+          <button type="button" @click="openPanelPage('calendar')">
+            <span aria-hidden="true">🗓️</span>
+            <strong>日历</strong>
+          </button>
+          <button type="button" @click="openPanelPage('mapEvents')">
+            <span aria-hidden="true">🗺️</span>
+            <strong>地图事件</strong>
+          </button>
+        </div>
       </div>
 
       <label class="quick-panel__setting">
@@ -357,6 +368,11 @@ function handleKeyDown(event: KeyboardEvent): void {
     />
     <Jx3CalendarView
       v-else-if="mode === 'panel' && panelPage === 'calendar'"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
+    <Jx3MapEventsView
+      v-else-if="mode === 'panel' && panelPage === 'mapEvents'"
       @back="returnToPanelHome"
       @close="closeAssistant"
     />
@@ -432,7 +448,7 @@ function handleKeyDown(event: KeyboardEvent): void {
 
 .quick-panel {
   display: grid;
-  gap: 12px;
+  gap: 9px;
   width: calc(100% - 12px);
   height: calc(100% - 12px);
   margin: 6px;
@@ -516,35 +532,68 @@ function handleKeyDown(event: KeyboardEvent): void {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 48px;
-  padding: 10px;
+  min-height: 44px;
+  padding: 8px 10px;
 }
 
 .quick-panel__actions button span {
   font-size: 18px;
 }
 
+.quick-panel__jx3-section {
+  border-radius: 15px;
+  padding: 9px;
+  background: rgb(255 255 255 / 40%);
+}
+
+.quick-panel__section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 2px 7px;
+}
+
+.quick-panel__section-title strong {
+  color: #50351c;
+  font-size: 12px;
+}
+
+.quick-panel__section-title small {
+  color: #9a7650;
+  font-size: 10px;
+}
+
 .quick-panel__jx3 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 7px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .quick-panel__jx3 button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 38px;
-  padding: 7px 5px;
+  grid-column: span 2;
+  gap: 5px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 5px;
+  white-space: nowrap;
+}
+
+.quick-panel__jx3 button:nth-last-child(-n + 2) {
+  grid-column: span 3;
 }
 
 .quick-panel__jx3 button span {
-  font-size: 14px;
+  flex: 0 0 auto;
+  font-size: 13px;
 }
 
 .quick-panel__jx3 button strong {
+  overflow: hidden;
   font-size: 11px;
+  text-overflow: ellipsis;
 }
 
 .quick-panel__setting {
@@ -553,7 +602,7 @@ function handleKeyDown(event: KeyboardEvent): void {
   justify-content: space-between;
   gap: 12px;
   border-radius: 13px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: rgb(255 255 255 / 58%);
 }
 
@@ -576,8 +625,8 @@ function handleKeyDown(event: KeyboardEvent): void {
 }
 
 .quick-panel__settings {
-  min-height: 38px;
-  padding: 9px 14px;
+  min-height: 36px;
+  padding: 8px 14px;
   font-weight: 700;
 }
 

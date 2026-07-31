@@ -59,6 +59,25 @@ export interface CalendarView {
   days: CalendarDay[];
 }
 
+export type MapEventCategory = "楚天社" | "云从社" | "披风会";
+
+export interface MapEventItem {
+  id: string;
+  time: string;
+  map: string;
+  site: string;
+  stage: string;
+  description: string;
+}
+
+export interface MapEventView {
+  category: MapEventCategory;
+  source: string;
+  fetchedAt: number;
+  stale: boolean;
+  items: MapEventItem[];
+}
+
 export function getCachedNewsPage(kind: NewsKind, page: number): Promise<NewsPage | null> {
   return invoke("get_cached_jx3_news_page", { kind, page });
 }
@@ -100,4 +119,17 @@ export function getCachedCalendar(): Promise<CalendarView | null> {
 
 export function fetchCalendar(force = false): Promise<CalendarView> {
   return invoke("fetch_jx3_calendar", { force });
+}
+
+export function getCachedMapEvents(
+  category: MapEventCategory,
+): Promise<MapEventView | null> {
+  return invoke("get_cached_jx3_map_events", { category });
+}
+
+export function fetchMapEvents(
+  category: MapEventCategory,
+  force = false,
+): Promise<MapEventView> {
+  return invoke("fetch_jx3_map_events", { category, force });
 }
