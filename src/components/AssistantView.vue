@@ -13,7 +13,6 @@ import {
   hideAssistantWindow,
   listenAssistantPayload,
   requestPetInteraction,
-  showSpeechBubble,
   syncAssistantWindowSize,
   toggleQuickPanel,
   type AssistantPayload,
@@ -41,7 +40,6 @@ const busy = ref(false);
 const errorMessage = ref("");
 const interactionMessage = ref("");
 const bubbleQueue = new SpeechBubbleQueue();
-const GREETING_MESSAGE = "江湖路远，今天也一起开心闯荡吧！";
 let bubbleTimer: number | undefined;
 let blurTimer: number | undefined;
 let stopListening: (() => void) | undefined;
@@ -176,26 +174,6 @@ async function closeAssistant(): Promise<void> {
   await hideAssistantWindow();
 }
 
-async function greetPet(): Promise<void> {
-  if (busy.value) return;
-  busy.value = true;
-  errorMessage.value = "";
-  interactionMessage.value = "";
-  try {
-    await requestPetInteraction("waving");
-    if (bubbleQueue.isDuplicate(GREETING_MESSAGE)) {
-      interactionMessage.value = "黄鸡开心地向你挥了挥翅膀";
-      return;
-    }
-    const shown = await showSpeechBubble(GREETING_MESSAGE);
-    if (!shown) interactionMessage.value = "黄鸡开心地向你挥了挥翅膀";
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
-  } finally {
-    busy.value = false;
-  }
-}
-
 async function playRandomInteraction(): Promise<void> {
   if (busy.value) return;
   busy.value = true;
@@ -298,10 +276,6 @@ function handleKeyDown(event: KeyboardEvent): void {
       </header>
 
       <div class="quick-panel__actions" aria-label="宠物互动">
-        <button type="button" :disabled="busy" @click="greetPet">
-          <span aria-hidden="true">👋</span>
-          <strong>打个招呼</strong>
-        </button>
         <button type="button" :disabled="busy" @click="playRandomInteraction">
           <span aria-hidden="true">✨</span>
           <strong>随机动作</strong>
@@ -535,7 +509,7 @@ function handleKeyDown(event: KeyboardEvent): void {
 
 .quick-panel__actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
