@@ -5,6 +5,7 @@ const sessionLines: Partial<Record<FlirtyLineKind, FlirtyLineView>> = {};
 const cooldownUntil: Record<FlirtyLineKind, number> = {
   random: 0,
   devoted: 0,
+  scumbag: 0,
 };
 </script>
 
@@ -22,6 +23,7 @@ defineEmits<{
 const TYPES: Array<{ kind: FlirtyLineKind; label: string; marker: string }> = [
   { kind: "random", label: "随机骚话", marker: "随" },
   { kind: "devoted", label: "舔狗骚话", marker: "舔" },
+  { kind: "scumbag", label: "渣男语录", marker: "渣" },
 ];
 const REQUEST_COOLDOWN_MS = 1_000;
 const COPY_FEEDBACK_MS = 1_600;
@@ -33,6 +35,7 @@ const lines = ref<Partial<Record<FlirtyLineKind, FlirtyLineView>>>({
 const loadingKinds = ref<Record<FlirtyLineKind, boolean>>({
   random: false,
   devoted: false,
+  scumbag: false,
 });
 const requestError = ref("");
 const copyError = ref("");
@@ -43,6 +46,9 @@ let copyFeedbackTimer: number | undefined;
 
 const currentLine = computed(() => lines.value[selectedKind.value]);
 const loading = computed(() => loadingKinds.value[selectedKind.value]);
+const selectedLabel = computed(
+  () => TYPES.find((item) => item.kind === selectedKind.value)?.label ?? "骚话",
+);
 
 onMounted(() => {
   armCooldownTimer();
@@ -167,7 +173,7 @@ function armCooldownTimer(): void {
         class="flirty-card"
         role="button"
         tabindex="0"
-        :aria-label="`复制当前${selectedKind === 'random' ? '随机骚话' : '舔狗骚话'}`"
+        :aria-label="`复制当前${selectedLabel}`"
         @click="copyCurrentLine"
         @keydown.enter.prevent="copyCurrentLine"
         @keydown.space.prevent="copyCurrentLine"
@@ -270,7 +276,7 @@ function armCooldownTimer(): void {
 
 .flirty-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
   padding: 4px;
   border-radius: 14px;
@@ -281,8 +287,8 @@ function armCooldownTimer(): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 7px;
+  gap: 5px;
+  padding: 7px 4px;
   border-color: transparent;
   background: transparent;
 }
@@ -300,7 +306,10 @@ function armCooldownTimer(): void {
 }
 
 .flirty-tabs button strong {
-  font-size: 12px;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .flirty-tabs .flirty-tabs__button--active {

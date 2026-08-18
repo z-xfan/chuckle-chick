@@ -8,7 +8,7 @@ use tauri::{
 use crate::preferences::PersistentPreferences;
 
 const PANEL_WIDTH: f64 = 320.0;
-const PANEL_HEIGHT: f64 = 390.0;
+const PANEL_HEIGHT: f64 = 420.0;
 const PANEL_DETAIL_WIDTH: f64 = 360.0;
 const PANEL_DETAIL_HEIGHT: f64 = 420.0;
 const BUBBLE_WIDTH: f64 = 260.0;

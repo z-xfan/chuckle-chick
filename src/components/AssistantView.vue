@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 import Jx3CalendarView from "@/components/Jx3CalendarView.vue";
+import Jx3DecisionsView from "@/components/Jx3DecisionsView.vue";
 import Jx3FlirtyLinesView from "@/components/Jx3FlirtyLinesView.vue";
 import Jx3MapEventsView from "@/components/Jx3MapEventsView.vue";
 import Jx3NewsView from "@/components/Jx3NewsView.vue";
@@ -32,6 +33,7 @@ const panelPage = ref<
   | "calendar"
   | "mapEvents"
   | "flirtyLines"
+  | "decisions"
 >("home");
 const currentBubble = ref<SpeechBubble>();
 const bubblePlacement = ref<"above" | "below">("above");
@@ -111,7 +113,8 @@ async function openPanelPage(
     | "server"
     | "calendar"
     | "mapEvents"
-    | "flirtyLines",
+    | "flirtyLines"
+    | "decisions",
 ): Promise<void> {
   panelPage.value = page;
   errorMessage.value = "";
@@ -312,6 +315,14 @@ function handleKeyDown(event: KeyboardEvent): void {
             <span aria-hidden="true">💬</span>
             <strong>骚话</strong>
           </button>
+          <button
+            type="button"
+            class="quick-panel__jx3-decision"
+            @click="openPanelPage('decisions')"
+          >
+            <span aria-hidden="true">🔮</span>
+            <strong>小决定</strong>
+          </button>
         </div>
       </div>
 
@@ -369,6 +380,11 @@ function handleKeyDown(event: KeyboardEvent): void {
     />
     <Jx3FlirtyLinesView
       v-else-if="mode === 'panel' && panelPage === 'flirtyLines'"
+      @back="returnToPanelHome"
+      @close="closeAssistant"
+    />
+    <Jx3DecisionsView
+      v-else-if="mode === 'panel' && panelPage === 'decisions'"
       @back="returnToPanelHome"
       @close="closeAssistant"
     />
@@ -575,6 +591,10 @@ function handleKeyDown(event: KeyboardEvent): void {
   min-height: 34px;
   padding: 6px 5px;
   white-space: nowrap;
+}
+
+.quick-panel__jx3 .quick-panel__jx3-decision {
+  grid-column: 1 / -1;
 }
 
 .quick-panel__jx3 button span {

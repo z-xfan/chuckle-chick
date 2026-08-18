@@ -1,6 +1,7 @@
 mod assistant;
 mod jx3;
 mod jx3_calendar;
+mod jx3_decisions;
 mod jx3_flirty_lines;
 mod jx3_map_events;
 mod preferences;
@@ -295,6 +296,7 @@ pub fn run() {
             jx3::open_jx3_official_url,
             jx3_calendar::get_cached_jx3_calendar,
             jx3_calendar::fetch_jx3_calendar,
+            jx3_decisions::fetch_jx3_decision,
             jx3_flirty_lines::fetch_jx3_flirty_line,
             jx3_map_events::get_cached_jx3_map_events,
             jx3_map_events::fetch_jx3_map_events
@@ -311,6 +313,7 @@ pub fn run() {
             app.manage(jx3_calendar::Jx3CalendarState::load(
                 app.path().app_config_dir()?.join("jx3-calendar-cache.json"),
             ));
+            app.manage(jx3_decisions::Jx3DecisionState::default());
             app.manage(jx3_flirty_lines::Jx3FlirtyLineState::default());
             app.manage(jx3_map_events::Jx3MapEventState::load(
                 app.path()

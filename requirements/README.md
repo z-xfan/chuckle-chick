@@ -59,3 +59,4 @@ REQ-0002-desktop-app-foundation.md
 | [REQ-0011](REQ-0011-jx3-map-events.md) | 剑网 3 地图事件查询 | 待验收 |
 | [REQ-0012](REQ-0012-jx3-flirty-lines.md) | 骚话文案 | 待验收 |
 | [REQ-0013](REQ-0013-unsigned-macos-dmg.md) | 无签名 macOS DMG 安装包 | 已完成 |
+| [REQ-0017](REQ-0017-jx3-expanded-quotes-and-decisions.md) | 扩展 JX3API 骚话与随机决策内容 | 已完成 |

@@ -78,11 +78,20 @@ export interface MapEventView {
   items: MapEventItem[];
 }
 
-export type FlirtyLineKind = "random" | "devoted";
+export type FlirtyLineKind = "random" | "devoted" | "scumbag";
 
 export interface FlirtyLineView {
   kind: FlirtyLineKind;
   text: string;
+  source: string;
+  fetchedAt: number;
+}
+
+export type DecisionKind = "answer" | "eat" | "drink";
+
+export interface DecisionView {
+  kind: DecisionKind;
+  items: string[];
   source: string;
   fetchedAt: number;
 }
@@ -145,4 +154,8 @@ export function fetchMapEvents(
 
 export function fetchFlirtyLine(kind: FlirtyLineKind): Promise<FlirtyLineView> {
   return invoke("fetch_jx3_flirty_line", { kind });
+}
+
+export function fetchDecision(kind: DecisionKind): Promise<DecisionView> {
+  return invoke("fetch_jx3_decision", { kind });
 }

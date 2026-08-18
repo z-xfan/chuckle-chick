@@ -11,6 +11,7 @@ use tokio::sync::Mutex as AsyncMutex;
 
 const RANDOM_ENDPOINT: &str = "https://www.jx3api.com/saohua/random";
 const DEVOTED_ENDPOINT: &str = "https://www.jx3api.com/saohua/content";
+const SCUMBAG_ENDPOINT: &str = "https://www.jx3api.com/saohua/zhanan";
 const SOURCE_LABEL: &str = "JX3API（第三方）";
 const REQUEST_COOLDOWN_MS: u64 = 1_000;
 const MAX_TEXT_CHARS: usize = 1_000;
@@ -20,6 +21,7 @@ pub struct Jx3FlirtyLineState {
     client: Client,
     random_lock: Arc<AsyncMutex<()>>,
     devoted_lock: Arc<AsyncMutex<()>>,
+    scumbag_lock: Arc<AsyncMutex<()>>,
     last_request_at: Arc<Mutex<HashMap<FlirtyLineKind, u64>>>,
 }
 
@@ -35,6 +37,7 @@ impl Default for Jx3FlirtyLineState {
             client,
             random_lock: Arc::new(AsyncMutex::new(())),
             devoted_lock: Arc::new(AsyncMutex::new(())),
+            scumbag_lock: Arc::new(AsyncMutex::new(())),
             last_request_at: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -45,6 +48,7 @@ impl Jx3FlirtyLineState {
         let request_lock = match kind {
             FlirtyLineKind::Random => &self.random_lock,
             FlirtyLineKind::Devoted => &self.devoted_lock,
+            FlirtyLineKind::Scumbag => &self.scumbag_lock,
         };
         let _request_guard = request_lock
             .try_lock()
@@ -87,6 +91,7 @@ impl Jx3FlirtyLineState {
 enum FlirtyLineKind {
     Random,
     Devoted,
+    Scumbag,
 }
 
 impl FlirtyLineKind {
@@ -94,6 +99,7 @@ impl FlirtyLineKind {
         match value {
             "random" => Ok(Self::Random),
             "devoted" => Ok(Self::Devoted),
+            "scumbag" => Ok(Self::Scumbag),
             _ => Err("不支持的骚话类型".to_string()),
         }
     }
@@ -102,6 +108,7 @@ impl FlirtyLineKind {
         match self {
             Self::Random => RANDOM_ENDPOINT,
             Self::Devoted => DEVOTED_ENDPOINT,
+            Self::Scumbag => SCUMBAG_ENDPOINT,
         }
     }
 }
@@ -235,6 +242,13 @@ mod tests {
                 .endpoint(),
             DEVOTED_ENDPOINT
         );
+        assert_eq!(
+            FlirtyLineKind::parse("scumbag")
+                .expect("scumbag")
+                .endpoint(),
+            SCUMBAG_ENDPOINT
+        );
+        assert!(FlirtyLineKind::parse("context").is_err());
         assert!(FlirtyLineKind::parse("other").is_err());
     }
 
